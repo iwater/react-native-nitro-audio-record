@@ -33,17 +33,20 @@ class HybridNitroAudioRecord : HybridNitroAudioRecordSpec() {
 
     override fun setup(options: AudioRecordOptions) {
         sampleRateInHz = options.sampleRate.toInt()
-        channelConfig = if (options.channels == 2L) AudioFormat.CHANNEL_IN_STEREO else AudioFormat.CHANNEL_IN_MONO
-        audioFormat = if (options.bitsPerSample == 8L) AudioFormat.ENCODING_PCM_8BIT else AudioFormat.ENCODING_PCM_16BIT
+        channelConfig = if (options.channels >= 2.0) AudioFormat.CHANNEL_IN_STEREO else AudioFormat.CHANNEL_IN_MONO
+        audioFormat = if (options.bitsPerSample <= 8.0) AudioFormat.ENCODING_PCM_8BIT else AudioFormat.ENCODING_PCM_16BIT
         audioSource = (options.audioSource ?: AudioSource.VOICE_RECOGNITION.toDouble()).toInt()
 
-        val context = NitroModules.applicationContext
+        val context = NitroModules.applicationContext ?: throw Exception("NitroModules.applicationContext is null!")
         val documentDirectoryPath = context.filesDir.absolutePath
         outFile = "$documentDirectoryPath/${options.wavFile ?: "audio.wav"}"
         tmpFile = "$documentDirectoryPath/temp.pcm"
 
         isRecording = false
         bufferSize = AudioRecord.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat)
+        if (bufferSize <= 0) {
+            bufferSize = 1024 // Fallback
+        }
         val recordingBufferSize = bufferSize * 3
         recorder = AudioRecord(audioSource, sampleRateInHz, channelConfig, audioFormat, recordingBufferSize)
     }
