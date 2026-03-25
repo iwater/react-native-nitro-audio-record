@@ -33,17 +33,20 @@ class HybridNitroAudioRecord : HybridNitroAudioRecordSpec() {
 
     override fun setup(options: AudioRecordOptions) {
         sampleRateInHz = options.sampleRate.toInt()
-        channelConfig = if (options.channels == 2L) AudioFormat.CHANNEL_IN_STEREO else AudioFormat.CHANNEL_IN_MONO
-        audioFormat = if (options.bitsPerSample == 8L) AudioFormat.ENCODING_PCM_8BIT else AudioFormat.ENCODING_PCM_16BIT
+        channelConfig = if (options.channels >= 2.0) AudioFormat.CHANNEL_IN_STEREO else AudioFormat.CHANNEL_IN_MONO
+        audioFormat = if (options.bitsPerSample <= 8.0) AudioFormat.ENCODING_PCM_8BIT else AudioFormat.ENCODING_PCM_16BIT
         audioSource = (options.audioSource ?: AudioSource.VOICE_RECOGNITION.toDouble()).toInt()
 
-        val context = NitroModules.applicationContext
+        val context = NitroModules.applicationContext ?: throw Exception("NitroModules.applicationContext is null!")
         val documentDirectoryPath = context.filesDir.absolutePath
         outFile = "$documentDirectoryPath/${options.wavFile ?: "audio.wav"}"
         tmpFile = "$documentDirectoryPath/temp.pcm"
 
         isRecording = false
         bufferSize = AudioRecord.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat)
+        if (bufferSize <= 0) {
+            bufferSize = 1024 // Fallback
+        }
         val recordingBufferSize = bufferSize * 3
         recorder = AudioRecord(audioSource, sampleRateInHz, channelConfig, audioFormat, recordingBufferSize)
     }
@@ -63,7 +66,7 @@ class HybridNitroAudioRecord : HybridNitroAudioRecordSpec() {
                 val os = FileOutputStream(tmpFile)
 
                 while (isRecording) {
-                    bytesRead = recorder?.read(buffer, 0, buffer.length) ?: -1
+                    bytesRead = recorder?.read(buffer, 0, buffer.size) ?: -1
 
                     // skip first 2 buffers to eliminate "click sound"
                     if (bytesRead > 0 && ++count > 2) {
@@ -89,15 +92,16 @@ class HybridNitroAudioRecord : HybridNitroAudioRecordSpec() {
 
     override fun stop(): Promise<String> {
         isRecording = false
-        return Promise { resolve ->
-            // In a real implementation, we might need a better way to wait for the thread to finish
-            // such as using a CountDownLatch or joining the thread.
-            // For now, we'll wait a bit (simplistic).
-            Thread {
+        val promise = Promise<String>()
+        Thread {
+            try {
                 Thread.sleep(100)
-                resolve(outFile)
-            }.start()
-        }
+                promise.resolve(outFile)
+            } catch (e: Exception) {
+                promise.reject(e)
+            }
+        }.start()
+        return promise
     }
 
     override fun onData(callback: (data: ArrayBuffer) -> Unit) {

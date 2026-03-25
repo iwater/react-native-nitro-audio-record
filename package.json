@@ -1,6 +1,6 @@
 {
   "name": "react-native-nitro-audio-record",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "\u001b[33mreact-native-nitro-audio-record\u001b[39m is a react native package built with Nitro",
   "main": "./lib/commonjs/index.js",
   "module": "./lib/module/index.js",
@@ -29,7 +29,7 @@
     "android/fix-prefab.gradle",
     "android/gradle.properties",
     "android/CMakeLists.txt",
-    "android/src",
+    "android/src/**/*",
     "ios/**/*.h",
     "ios/**/*.m",
     "ios/**/*.mm",
