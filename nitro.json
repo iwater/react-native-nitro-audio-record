@@ -1,0 +1,30 @@
+{
+  "$schema": "https://nitro.margelo.com/nitro.schema.json",
+  "cxxNamespace": [
+    "nitroaudiorecord"
+  ],
+  "ios": {
+    "iosModuleName": "NitroAudioRecord"
+  },
+  "android": {
+    "androidNamespace": [
+      "nitroaudiorecord"
+    ],
+    "androidCxxLibName": "NitroAudioRecord"
+  },
+  "autolinking": {
+    "NitroAudioRecord": {
+      "ios": {
+        "language": "swift",
+        "implementationClassName": "HybridNitroAudioRecord"
+      },
+      "android": {
+        "language": "kotlin",
+        "implementationClassName": "HybridNitroAudioRecord"
+      }
+    }
+  },
+  "ignorePaths": [
+    "**/node_modules"
+  ]
+}
